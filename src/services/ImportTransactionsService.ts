@@ -30,9 +30,9 @@ class ImportTransactionsService {
 
     const cvsFileReadStream = fs.createReadStream(csvPath);
 
-    const parseCSV = cvsFileReadStream.pipe(
-      parse({ delimiter: ',', from_line: 2 }),
-    );
+    const parseConfig = parse({ delimiter: ',', from_line: 2 });
+
+    const parseCSV = cvsFileReadStream.pipe(parseConfig);
 
     parseCSV.on('data', async csvrow => {
       const [title, type, value, category] = csvrow.map((row: string) =>
@@ -72,14 +72,16 @@ class ImportTransactionsService {
     const finalCategories = [...newCategories, ...existentCategories];
 
     const createdTransactions = transactionRepository.create(
-      transactions.map(transaction => ({
-        title: transaction.title,
-        type: transaction.type,
-        value: transaction.value,
-        category: finalCategories.find(
-          category => category.title === transaction.title,
-        ),
-      })),
+      transactions.map(transaction => {
+        return {
+          title: transaction.title,
+          type: transaction.type,
+          value: transaction.value,
+          category: finalCategories.find(
+            category => category.title === transaction.category,
+          ),
+        };
+      }),
     );
 
     await transactionRepository.save(createdTransactions);
